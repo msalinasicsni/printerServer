@@ -79,11 +79,17 @@ public class Server {
                 }else{
                     if (parameters.get("barcodes")!=null) {
                         String barcodeParam = parameters.get("barcodes").toString();
-                        String copias = (parameters.get("copias")!=null?parameters.get("copias").toString():"1");
+                        //String copias = (parameters.get("copias")!=null?parameters.get("copias").toString():"1");
+                        String tipo = parameters.get("tipo").toString();
                         System.out.println(barcodeParam);
                         String[] barcodes = barcodeParam.split(",");
                         DocPrintJob job = psZebra.createPrintJob();
-                        PrintLabels(job, barcodes, Integer.valueOf(copias));
+
+                        if (tipo.equalsIgnoreCase("1")) {
+                            PrintLabelsQRCode(job, barcodes);
+                        }else if (tipo.equalsIgnoreCase("2")){
+                            PrintLabelsLinealCode(job, barcodes);
+                        }
                         response = "OK";
                     }else{
                         System.out.println("Par�metro no encontrado");
@@ -116,15 +122,37 @@ public class Server {
             return psZebra;
         }
 
-        private static void PrintLabels(DocPrintJob job, String[] barcodes, int copias) throws Exception{
+        private static void PrintLabelsQRCode(DocPrintJob job, String[] barcodes) throws Exception{
             String labels="";
             for(String barcode: barcodes){
-                for(int i = 0 ; i < copias ; i++) {
-                    labels += "N\n" +
-                            "b0,0,D,c18,r18,\"" + barcode + "\"\n" +
-                            "A100,40,0,2,1,1,N,\"" + barcode + "\"\n" +
-                            "\nP1,1\n";
+                String partes[] = barcode.split("\\*");
+                labels += "N\n" +
+                        "b20,0,Q,\"" +  partes[0]+partes[1]+" "+partes[2] + "\"\n";
+                int yposicion=20;
+                for(int i =0; i < partes.length-1;i++) {
+                    labels+="A150,"+String.valueOf(yposicion)+",0,2,1,1,N,\"" + partes[i] + "\"\n";
+                    yposicion+=20;
                 }
+                labels+="\nP"+partes[partes.length-1]+",1\n";
+
+            }
+            byte[] by = labels.getBytes();
+            DocFlavor flavor = DocFlavor.BYTE_ARRAY.AUTOSENSE;
+            Doc doc = new SimpleDoc(by, flavor, null);
+            System.out.println("imprimiendo ...");
+            job.print(doc, null);
+            System.out.println("etiquetas impresas");
+        }
+
+        private static void PrintLabelsLinealCode(DocPrintJob job, String[] barcodes) throws Exception{
+            String labels="";
+            for(String barcode: barcodes){
+                String partes[] = barcode.split("\\*");
+                labels += "N\n" +
+                        "B20,5,0,K,2,8,70,N,\"A" +  partes[0]+ "A\"\n" +
+                        "A235,15,0,2,1,1,N,\"" + partes[0] + "\"\n" +
+                        "\nP"+partes[partes.length-1]+",1\n";
+
             }
             byte[] by = labels.getBytes();
             DocFlavor flavor = DocFlavor.BYTE_ARRAY.AUTOSENSE;
