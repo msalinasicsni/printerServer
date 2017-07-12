@@ -80,16 +80,17 @@ public class Server {
                     if (parameters.get("barcodes")!=null) {
                         String barcodeParam = parameters.get("barcodes").toString();
                         //String copias = (parameters.get("copias")!=null?parameters.get("copias").toString():"1");
-                        String tipo = parameters.get("tipo").toString();
+                        //tring tipo = parameters.get("tipo").toString();
                         System.out.println(barcodeParam);
                         String[] barcodes = barcodeParam.split(",");
                         DocPrintJob job = psZebra.createPrintJob();
 
-                        if (tipo.equalsIgnoreCase("1")) {
+                        PrintLabels(job, barcodes);
+                        /*if (tipo.equalsIgnoreCase("1")) {
                             PrintLabelsQRCode(job, barcodes);
                         }else if (tipo.equalsIgnoreCase("2")){
                             PrintLabelsLinealCode(job, barcodes);
-                        }
+                        }*/
                         response = "OK";
                     }else{
                         System.out.println("Par�metro no encontrado");
@@ -120,6 +121,40 @@ public class Server {
                 }
             }
             return psZebra;
+        }
+
+        private static void PrintLabels(DocPrintJob job, String[] barcodes) throws Exception{
+            String labels="";
+            for(String barcode: barcodes){
+                String partes[] = barcode.split("\\*");
+                //si es 1 es QrCode, va la fif, fechacaso y codigo lab
+                if (partes[partes.length-1].equalsIgnoreCase("1")) {
+                    labels += "N\n" +
+                            "b45,0,Q,\"" + partes[0]+ partes[1] + "\"\n";
+                    //sacar solo codigo del participante del codigo lab
+                    labels += "A135,10,0,2,1,1,N,\"" + partes[1].substring(0,partes[1].indexOf(".")) + "\"\n";
+                    int yposicion = 30;
+                    //codigo lab y codigo casa
+                    for (int i = 1; i < partes.length - 2; i++) {
+                        labels += "A135," + String.valueOf(yposicion) + ",0,2,1,1,N,\"" + partes[i] + "\"\n";
+                        yposicion += 20;
+                    }
+                    labels+="\nP"+partes[partes.length-2]+",1\n";
+                    //si es 2 es codabar y solo va el codigo del codigo del participante
+                }else if (partes[partes.length-1].equalsIgnoreCase("2")) {
+                    labels += "N\n" +
+                            "B20,5,0,K,2,8,70,N,\"A" + partes[0] + "A\"\n" +
+                            "A235,15,0,2,1,1,N,\"" + partes[0] + "\"\n" +
+                            "\nP" + partes[partes.length - 2] + ",1\n";
+                }
+            }
+            byte[] by = labels.getBytes();
+            DocFlavor flavor = DocFlavor.BYTE_ARRAY.AUTOSENSE;
+            Doc doc = new SimpleDoc(by, flavor, null);
+            System.out.println("imprimiendo ...");
+            job.print(doc, null);
+            System.out.println("etiquetas impresas");
+
         }
 
         private static void PrintLabelsQRCode(DocPrintJob job, String[] barcodes) throws Exception{
