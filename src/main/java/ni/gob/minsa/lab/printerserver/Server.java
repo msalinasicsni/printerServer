@@ -18,10 +18,20 @@ import java.util.*;
 public class Server {
 
     static int port = 13001; //por defecto puerto 13001
-    static String printerName = "ZDesigner GC420t (EPL"; //por defecto el nombre de la impresora es 'zebra'
+    static String printerName = "ZDesigner GC420t (EPL)"; //por defecto el nombre de la impresora es 'zebra'
+    static String xPosicionBarcode = "18";
+    static String xPosicionText = "102";
     public static void main(String[] args) throws Exception {
         String pName = getProperty("printer.name");
+        String pPort = getProperty("port");
+
+        String pXPosicionBarcode = getProperty("posicion.x.barcode");
+        String pXPosicionText = getProperty("posicion.x.text");
+
         if (pName!=null) printerName = pName;
+        if (pPort!=null) port = Integer.parseInt(pPort);
+        if (pXPosicionBarcode!=null) xPosicionBarcode = pXPosicionBarcode;
+        if (pXPosicionText!=null) xPosicionText = pXPosicionText;
 
         HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
 
@@ -53,6 +63,10 @@ public class Server {
         @Override
         public void handle(HttpExchange httpExchange) throws IOException {
             String response = "<h1>Servidor iniciado exitosamente</h1>" + "<h1>Puerto: " + port + "</h1><h1>Impresora: "+printerName + "</h1>";
+            httpExchange.getResponseHeaders().add("Access-Control-Allow-Origin", "*");
+            httpExchange.getResponseHeaders().add("Access-Control-Allow-Methods", "GET, POST, PUT, DELETE, OPTIONS");
+            httpExchange.getResponseHeaders().add("Access-Control-Allow-Headers", "Content-Type,Authorization");
+            httpExchange.getResponseHeaders().add("Access-Control-Allow-Credentials", "true");
             httpExchange.sendResponseHeaders(200, response.length());
             OutputStream os = httpExchange.getResponseBody();
             os.write(response.getBytes());
@@ -86,21 +100,16 @@ public class Server {
                         DocPrintJob job = psZebra.createPrintJob();
 
                         PrintLabels(job, barcodes);
-                        /*if (tipo.equalsIgnoreCase("1")) {
-                            PrintLabelsQRCode(job, barcodes);
-                        }else if (tipo.equalsIgnoreCase("2")){
-                            PrintLabelsLinealCode(job, barcodes);
-                        }*/
                         response = "OK";
                     }else{
-                        System.out.println("Par�metro no encontrado");
-                        response+= "Par�metro no encontrado";
+                        System.out.println("Parametro no encontrado");
+                        response+= "Parametro no encontrado";
                     }
                 }
             }catch (Exception ex){
                 System.out.println("error");
                 ex.printStackTrace();
-                response+="Error en el proceso de impresi�n";
+                response+="Error en el proceso de impresion";
             }finally {
                 //enviando respuesta al cliente
                 httpExchange.sendResponseHeaders(200, response.length());
@@ -130,24 +139,28 @@ public class Server {
                 //si es 1 es QrCode, va la fif, fechacaso y codigo lab
                 if (partes[partes.length-1].equalsIgnoreCase("1")) {
                     labels += "N\n" +
-                            "b45,0,Q,\"" + partes[0]+ partes[1] + "\"\n";
+                            "b"+xPosicionBarcode+",5,Q,\"" + partes[0]+ partes[1] + "\"\n";
                     //sacar solo codigo del participante del codigo lab
-                    labels += "A135,10,0,2,1,1,N,\"" + partes[1].substring(0,partes[1].indexOf(".")) + "\"\n";
+                    String codigoPart = partes[1].replaceAll("A2.", "");
+                    codigoPart = codigoPart.substring(0, codigoPart.indexOf("."));
+                    labels += "A"+xPosicionText+",10,0,3,1,1,N,\"" + codigoPart + "\"\n";
                     int yposicion = 30;
                     //codigo lab y codigo casa
                     for (int i = 1; i < partes.length - 2; i++) {
-                        labels += "A135," + String.valueOf(yposicion) + ",0,2,1,1,N,\"" + partes[i] + "\"\n";
-                        yposicion += 20;
+                        labels += "A"+xPosicionText+"," + String.valueOf(yposicion) + ",0,2,1,1,N,\"" + partes[i] + "\"\n";
+                        yposicion += 22;
                     }
+                    labels += "A"+xPosicionText+"," + String.valueOf(yposicion) + ",0,4,1,1,N,\"" + "A2CARES" + "\"\n";
                     labels+="\nP"+partes[partes.length-2]+",1\n";
                     //si es 2 es codabar y solo va el codigo del codigo del participante
                 }else if (partes[partes.length-1].equalsIgnoreCase("2")) {
                     labels += "N\n" +
-                            "B20,5,0,K,2,8,70,N,\"A" + partes[0] + "A\"\n" +
-                            "A235,15,0,2,1,1,N,\"" + partes[0] + "\"\n" +
+                            "B20,5,0,K,2,8,70,N,\"A" + partes[1] + "A\"\n" + /*se cambio a partes[1] antes tenia partes[0]*/
+                            "A235,15,0,2,1,1,N,\"" + partes[1] + "\"\n" +
                             "\nP" + partes[partes.length - 2] + ",1\n";
                 }
             }
+            //System.out.print(labels);
             byte[] by = labels.getBytes();
             DocFlavor flavor = DocFlavor.BYTE_ARRAY.AUTOSENSE;
             Doc doc = new SimpleDoc(by, flavor, null);
@@ -155,46 +168,6 @@ public class Server {
             job.print(doc, null);
             System.out.println("etiquetas impresas");
 
-        }
-
-        private static void PrintLabelsQRCode(DocPrintJob job, String[] barcodes) throws Exception{
-            String labels="";
-            for(String barcode: barcodes){
-                String partes[] = barcode.split("\\*");
-                labels += "N\n" +
-                        "b20,0,Q,\"" +  partes[0]+partes[1]+" "+partes[2] + "\"\n";
-                int yposicion=20;
-                for(int i =0; i < partes.length-1;i++) {
-                    labels+="A150,"+String.valueOf(yposicion)+",0,2,1,1,N,\"" + partes[i] + "\"\n";
-                    yposicion+=20;
-                }
-                labels+="\nP"+partes[partes.length-1]+",1\n";
-
-            }
-            byte[] by = labels.getBytes();
-            DocFlavor flavor = DocFlavor.BYTE_ARRAY.AUTOSENSE;
-            Doc doc = new SimpleDoc(by, flavor, null);
-            System.out.println("imprimiendo ...");
-            job.print(doc, null);
-            System.out.println("etiquetas impresas");
-        }
-
-        private static void PrintLabelsLinealCode(DocPrintJob job, String[] barcodes) throws Exception{
-            String labels="";
-            for(String barcode: barcodes){
-                String partes[] = barcode.split("\\*");
-                labels += "N\n" +
-                        "B20,5,0,K,2,8,70,N,\"A" +  partes[0]+ "A\"\n" +
-                        "A235,15,0,2,1,1,N,\"" + partes[0] + "\"\n" +
-                        "\nP"+partes[partes.length-1]+",1\n";
-
-            }
-            byte[] by = labels.getBytes();
-            DocFlavor flavor = DocFlavor.BYTE_ARRAY.AUTOSENSE;
-            Doc doc = new SimpleDoc(by, flavor, null);
-            System.out.println("imprimiendo ...");
-            job.print(doc, null);
-            System.out.println("etiquetas impresas");
         }
 
         public static void parseQuery(String query, Map<String,
