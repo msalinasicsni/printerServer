@@ -21,6 +21,8 @@ public class Server {
     static String printerName = "ZDesigner GC420t (EPL)"; //por defecto el nombre de la impresora es 'zebra'
     static String xPosicionBarcode = "18";
     static String xPosicionText = "102";
+    static String xPosicionLineal = "20";
+    static String xPosicionTextLineal = "180";
     public static void main(String[] args) throws Exception {
         String pName = getProperty("printer.name");
         String pPort = getProperty("port");
@@ -28,10 +30,15 @@ public class Server {
         String pXPosicionBarcode = getProperty("posicion.x.barcode");
         String pXPosicionText = getProperty("posicion.x.text");
 
+        String pXPosicionLineal = getProperty("posicion.x.Lineal");
+        String pXPosicionTextLineal  = getProperty("posicion.x.textLineal");
+
         if (pName!=null) printerName = pName;
         if (pPort!=null) port = Integer.parseInt(pPort);
         if (pXPosicionBarcode!=null) xPosicionBarcode = pXPosicionBarcode;
         if (pXPosicionText!=null) xPosicionText = pXPosicionText;
+        if (pXPosicionLineal!=null) xPosicionLineal = pXPosicionLineal;
+        if (pXPosicionTextLineal!=null) xPosicionTextLineal = pXPosicionTextLineal;
 
         HttpServer server = HttpServer.create(new InetSocketAddress(port), 0);
 
@@ -155,8 +162,8 @@ public class Server {
                     //si es 2 es codabar y solo va el codigo del codigo del participante
                 }else if (partes[partes.length-1].equalsIgnoreCase("2")) {
                     labels += "N\n" +
-                            "B20,5,0,K,2,8,70,N,\"A" + partes[1] + "A\"\n" + /*se cambio a partes[1] antes tenia partes[0]*/
-                            "A235,15,0,2,1,1,N,\"" + partes[1] + "\"\n" +
+                            "B"+xPosicionLineal+",5,0,K,2,8,70,N,\"A" + partes[1] + "A\"\n" + /*se cambio a partes[1] antes tenia partes[0]*/
+                            "A"+xPosicionTextLineal+",15,0,2,1,1,N,\"" + partes[1] + "\"\n" +
                             "\nP" + partes[partes.length - 2] + ",1\n";
                 }
             }
