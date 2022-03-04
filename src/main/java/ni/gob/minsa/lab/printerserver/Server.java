@@ -158,12 +158,24 @@ public class Server {
                         yposicion += 22;
                     }
                     labels += "A"+xPosicionText+"," + String.valueOf(yposicion) + ",0,4,1,1,N,\"" + "A2CARES" + "\"\n";
-                    labels+="\nP"+partes[partes.length-2]+",1\n";
+                    labels+="\nP"+partes[partes.length - 2]+",1\n";
                     //si es 2 es codabar y solo va el codigo del codigo del participante
                 }else if (partes[partes.length-1].equalsIgnoreCase("2")) {
+                    /* Code 128 auto A, B, C modes
+                    Bp1,p2,p3,p4,p5,p6,p7,p8,”DATA”
+                    p1 = Horizontal start position
+                    p2 = Vertical start position
+                    p3 = Rotation
+                    p4 = Bar Code selection.
+                    p5 = Narrow bar width
+                    p6 = Wide bar width
+                    p7 = Bar code height
+                    p8 = Print human readable code
+                    DATA = Fixed data field
+                     */
                     labels += "N\n" +
-                            "B"+xPosicionLineal+",5,0,K,2,8,70,N,\"A" + partes[1] + "A\"\n" + /*se cambio a partes[1] antes tenia partes[0]*/
-                            "A"+xPosicionTextLineal+",15,0,2,1,1,N,\"" + partes[1] + "\"\n" +
+                            "B"+xPosicionLineal+",0,0,1,2,,60,B,\""+ partes[0] + "\"\n" + /*se cambio a partes[1] antes tenia partes[0]*/
+                            //"A"+xPosicionTextLineal+",15,0,2,1,1,N,\"" + partes[0] + "\"\n" +
                             "\nP" + partes[partes.length - 2] + ",1\n";
                 }
             }
