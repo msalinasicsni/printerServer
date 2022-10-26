@@ -160,7 +160,7 @@ public class Server {
                     labels += "A"+xPosicionText+"," + String.valueOf(yposicion) + ",0,4,1,1,N,\"" + "A2CARES" + "\"\n";
                     labels+="\nP"+partes[partes.length - 2]+",1\n";
                     //si es 2 es codabar y solo va el codigo del codigo del participante
-                }else if (partes[partes.length-1].equalsIgnoreCase("2")) {
+                } else if (partes[partes.length-1].equalsIgnoreCase("2")) {
                     /* Code 128 auto A, B, C modes
                     Bp1,p2,p3,p4,p5,p6,p7,p8,”DATA”
                     p1 = Horizontal start position
@@ -174,9 +174,23 @@ public class Server {
                     DATA = Fixed data field
                      */
                     labels += "N\n" +
+                            "B"+xPosicionLineal+",0,0,1,2,,60,N,\""+ partes[0] + "\"\n" + /*se cambio a partes[1] antes tenia partes[0]*/
+                            "A"+xPosicionTextLineal+",15,0,4,1,1,N,\"" + partes[0] + "\"\n" +
+                            "\nP" + partes[partes.length - 2] + ",1\n";
+
+                } else if (partes[partes.length-1].equalsIgnoreCase("3")) {//QR para MA
+                    labels += "N\n" +
+                            "b"+xPosicionBarcode+",5,Q,\"" + partes[0] + "\"\n";
+                    //sacar solo codigo del participante del codigo lab
+                    labels += "A"+xPosicionText+",10,0,4,1,1,N,\"" + partes[0] + "\"\n";
+                    labels+="\nP"+partes[partes.length - 2]+",1\n";
+
+                } else if (partes[partes.length-1].equalsIgnoreCase("4")) {//Lineal para MA
+                    labels += "N\n" +
                             "B"+xPosicionLineal+",0,0,1,2,,60,B,\""+ partes[0] + "\"\n" + /*se cambio a partes[1] antes tenia partes[0]*/
                             //"A"+xPosicionTextLineal+",15,0,2,1,1,N,\"" + partes[0] + "\"\n" +
                             "\nP" + partes[partes.length - 2] + ",1\n";
+
                 }
             }
             //System.out.print(labels);
